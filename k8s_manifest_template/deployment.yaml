@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+    spec:
+      containers:
+      - image: $CONTAINER_RELEASE_IMAGE
+        imagePullPolicy: Always
+        name: api
+        ports:
+        - containerPort: $PORT
+          protocol: TCP

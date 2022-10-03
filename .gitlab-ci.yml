@@ -1,0 +1,59 @@
+stages:
+  - build
+  - deploy
+
+variables:
+  CONTAINER_RELEASE_IMAGE: $DOCKER_USER/api:$CI_COMMIT_BRANCH
+  PORT: "5000"
+  GIT_SUBMODULE_STRATEGY: recursive
+
+
+.build:
+  stage: build
+  image: docker:20.10
+  before_script:
+    - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
+  script: 
+    - docker build -t $CONTAINER_RELEASE_IMAGE -f Dockerfile .
+    - docker push $CONTAINER_RELEASE_IMAGE
+
+.deploy:
+  stage: deploy
+  image: alpine/k8s:1.21.5
+  before_script:
+    - apk add gettext
+    - kubectl config use-context $GITLAB_AGENT_CONTEXT
+    - mkdir k8s_manifest
+    - envsubst < k8s_manifest_template/deployment.yaml > k8s_manifest/deployment.yaml
+    - envsubst < k8s_manifest_template/service.yaml > k8s_manifest/service.yaml
+    - envsubst < k8s_manifest_template/ingress.yaml > k8s_manifest/ingress.yaml
+  script:
+    - kubectl apply -f k8s_maniest
+
+build:qa:
+  extends: .build  
+  tags:
+    - build
+  rules:
+    - if: $CI_COMMIT_REF_NAME != null
+      changes: 
+      - .gitlab-ci.yml
+      when: never
+          
+    - if: $CI_COMMIT_REF_NAME == "qa"
+
+deploy:qa:
+  extends: .deploy
+  tags:
+    - deploy
+   rules:
+    - if: $CI_COMMIT_REF_NAME != null
+      changes: 
+      - .gitlab-ci.yml
+      when: never
+          
+    - if: $CI_COMMIT_REF_NAME == "qa"
+
+
+
+
