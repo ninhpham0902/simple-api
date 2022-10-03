@@ -9,7 +9,7 @@ class TimezoneList(Resource):
     def __init__(self) -> None:
       self.Timezone = {
         "Vietnam": 'GMT +7',
-        "China": 'GMT+8'
+        "China": 'GMT +8'
       }
     def get_data(self, country: str):
         return self.Timezone[country]
